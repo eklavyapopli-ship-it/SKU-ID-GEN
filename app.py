@@ -1,11 +1,14 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
 import random
 import string
+import csv
+import os
 
 app = Flask(__name__)
 
 # Track SKUs per product name
 existing_skus = {}
+CSV_FILE = 'skus.csv'
 
 # Generate short random string (used if duplicate SKUs occur)
 def random_suffix(length=4):
@@ -38,6 +41,18 @@ def create_sku(name, categories):
 
     return sku
 
+# Save to CSV
+def save_to_csv(product_name, categories, sku):
+    file_exists = os.path.isfile(CSV_FILE)
+    with open(CSV_FILE, mode='a', newline='') as file:
+        writer = csv.writer(file)
+        if not file_exists:
+            # Header row
+            header = ['Product Name', 'SKU'] + list(categories.keys())
+            writer.writerow(header)
+        row = [product_name, sku] + list(categories.values())
+        writer.writerow(row)
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -45,29 +60,43 @@ def home():
 @app.route('/generate_sku', methods=['POST'])
 def generate_sku():
     data = request.get_json()
-    name = data.get('name', '').strip()
-    categories = data.get('categories', {})
+    products = data.get('products', [])
 
-    if not name:
-        return jsonify({"error": "Product name is required"}), 400
+    results = []
 
-    sku = create_sku(name, categories)
+    for product in products:
+        name = product.get('name', '').strip()
+        categories = product.get('categories', {})
 
-    # Generate short codes for category values
-    category_codes = {}
-    for key, value in categories.items():
-        val_words = value.strip().split()
-        if len(val_words) == 1:
-            code = value[:3].upper()
-        else:
-            code = ''.join(word[0].upper() for word in val_words)
-        category_codes[value] = code
+        if not name:
+            continue
 
-    return jsonify({
-        "sku": sku,
-        "category_heads": list(categories.keys()),
-        "category_codes": category_codes  # full form -> code
-    })
+        sku = create_sku(name, categories)
+        save_to_csv(name, categories, sku)
+
+        category_codes = {}
+        for key, value in categories.items():
+            val_words = value.strip().split()
+            if len(val_words) == 1:
+                code = value[:3].upper()
+            else:
+                code = ''.join(word[0].upper() for word in val_words)
+            category_codes[value] = code
+
+        results.append({
+            "name": name,
+            "sku": sku,
+            "category_heads": list(categories.keys()),
+            "category_codes": category_codes
+        })
+
+    return jsonify({"results": results, "csv_file": CSV_FILE})
+
+@app.route('/download_csv')
+def download_csv():
+    if os.path.exists(CSV_FILE):
+        return send_file(CSV_FILE, as_attachment=True)
+    return "No CSV found", 404
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
