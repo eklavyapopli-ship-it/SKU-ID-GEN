@@ -78,10 +78,11 @@ def save_barcode(sku, name):
             existing_barcodes[name] = filepath
             return filepath
         return None
-
 @app.route('/')
 def home():
-    return send_from_directory('/index.html', 'index.html')
+    # Serves static/index.html
+    return app.send_static_file('index.html')
+
 
 @app.route('/generate_sku', methods=['POST'])
 def generate_sku():
