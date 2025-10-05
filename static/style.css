@@ -1,0 +1,15 @@
+* { margin:0; padding:0; box-sizing:border-box; font-family: 'Roboto', sans-serif; }
+body { background: linear-gradient(to right, #f3e8ff, #2575fc); display:flex; justify-content:center; padding:20px; min-height:100vh; }
+.container { background:#fff; border-radius:15px; padding:30px; max-width:700px; width:100%; box-shadow:0 8px 20px rgba(0,0,0,0.2); }
+header { text-align:center; margin-bottom:20px; }
+header h1 { color:#333; font-size:1.8rem; }
+.form-section .form-group { display:flex; gap:10px; margin-bottom:12px; }
+.form-section input { flex:1; padding:10px 12px; border-radius:8px; border:1px solid #ddd; font-size:0.95rem; }
+.buttons-row { display:flex; gap:10px; margin-top:8px; }
+button { padding:10px 18px; background:#2575fc; color:#fff; border:none; border-radius:8px; cursor:pointer; transition:0.2s; }
+button:hover { background:#6a11cb; }
+.result-section { margin-top:20px; text-align:center; }
+.result-section h2 { color:#2575fc; margin-bottom:8px; }
+#barcodeImage { max-width:100%; border:1px solid #ddd; padding:8px; border-radius:8px; background:#fafafa; margin-top:8px; }
+.download-btn { display:inline-block; margin-top:10px; padding:8px 14px; background:#21a179; color:#fff; border-radius:8px; text-decoration:none; }
+.download-btn:hover { background:#188a66; }

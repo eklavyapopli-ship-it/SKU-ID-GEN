@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SKU & Barcode Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>SKU & Barcode Generator</h1>
+    </header>
+
+    <section class="form-section">
+      <div class="form-group">
+        <label for="productName">Product Name</label>
+        <input id="productName" type="text" placeholder="Enter product name">
+      </div>
+
+      <div id="categoriesContainer">
+        <!-- one starter category row -->
+        <div class="category-row category">
+          <input class="catType" placeholder="Category Type (e.g., Color)">
+          <input class="catValue" placeholder="Category Value (e.g., Blue)">
+          <button class="remove-row-btn" type="button" title="Remove">✕</button>
+        </div>
+      </div>
+
+      <div class="buttons-row">
+        <button id="addCategoryBtn" type="button">+ Add Category</button>
+        <button id="generateBtn" type="button">Generate SKU & Barcode</button>
+      </div>
+    </section>
+
+    <section class="result-section">
+      <h2>Generated SKU</h2>
+      <p id="skuResult">-</p>
+      <h2>Barcode</h2>
+      <img id="barcodeImage" src="" alt="Barcode" />
+      <div id="downloadRow" style="margin-top:12px;"></div>
+    </section>
+    <H2>MADE BY EKLAVYA POPLI</H2>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
