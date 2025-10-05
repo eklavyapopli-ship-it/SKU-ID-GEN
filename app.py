@@ -81,7 +81,7 @@ def save_barcode(sku, name):
 
 @app.route('/')
 def home():
-    return send_from_directory('/Users/eklavyapopli/sku_dahsboard/index.html', 'index.html')
+    return send_from_directory('/index.html', 'index.html')
 
 @app.route('/generate_sku', methods=['POST'])
 def generate_sku():
