@@ -1,48 +1,102 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>SKU & Barcode Dashboard</title>
-  <link rel="stylesheet" href="/static/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SKU Generator</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 0; padding: 20px; display: flex; gap: 20px; }
+.container { flex: 1; }
+input, button { padding: 8px; margin: 5px 0; width: 100%; max-width: 300px; }
+.category-input { display: flex; gap: 5px; margin-bottom: 5px; }
+#barcode img { max-width: 200px; margin-top: 10px; }
+.right-column { flex: 1; border-left: 1px solid #ccc; padding-left: 20px; }
+.right-column h3 { margin-top: 0; }
+</style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>SKU & Barcode Generator</h1>
-    </header>
 
-    <section class="form-section">
-      <div class="form-group">
-        <label for="productName">Product Name</label>
-        <input id="productName" type="text" placeholder="Enter product name">
-      </div>
+<div class="container">
+    <h2>SKU & Barcode Generator</h2>
+    <input type="text" id="productName" placeholder="Product Name">
 
-      <div id="categoriesContainer">
-        <!-- one starter category row -->
-        <div class="category-row category">
-          <input class="catType" placeholder="Category Type (e.g., Color)">
-          <input class="catValue" placeholder="Category Value (e.g., Blue)">
-          <button class="remove-row-btn" type="button" title="Remove">✕</button>
+    <div id="categoriesContainer">
+        <div class="category-input">
+            <input type="text" placeholder="Category Name" class="cat-name">
+            <input type="text" placeholder="Category Value" class="cat-value">
+            <button type="button" onclick="removeCategory(this)">❌</button>
         </div>
-      </div>
+    </div>
+    <button type="button" onclick="addCategory()">➕ Add Category</button>
+    <br>
+    <button id="generateBtn">Generate SKU</button>
 
-      <div class="buttons-row">
-        <button id="addCategoryBtn" type="button">+ Add Category</button>
-        <button id="generateBtn" type="button">Generate SKU & Barcode</button>
-      </div>
-    </section>
+    <h3>Result:</h3>
+    <p>SKU: <span id="sku"></span></p>
+    <p>Category Heads: <span id="catDisplay"></span></p>
+    <div id="barcode"></div>
+</div>
 
-    <section class="result-section">
-      <h2>Generated SKU</h2>
-      <p id="skuResult">-</p>
-      <h2>Barcode</h2>
-      <img id="barcodeImage" src="" alt="Barcode" />
-      <div id="downloadRow" style="margin-top:12px;"></div>
-    </section>
-    <H2>MADE BY EKLAVYA POPLI</H2>
-  </div>
+<div class="right-column">
+    <h3>Category Full Values</h3>
+    <div id="fullValues"></div>
+</div>
 
-  <script src="/static/script.js"></script>
+<script>
+function addCategory() {
+    const container = document.getElementById('categoriesContainer');
+    const div = document.createElement('div');
+    div.className = 'category-input';
+    div.innerHTML = `
+        <input type="text" placeholder="Category Name" class="cat-name">
+        <input type="text" placeholder="Category Value" class="cat-value">
+        <button type="button" onclick="removeCategory(this)">❌</button>
+    `;
+    container.appendChild(div);
+}
+
+function removeCategory(btn) {
+    btn.parentElement.remove();
+}
+
+document.getElementById('generateBtn').addEventListener('click', async () => {
+    const name = document.getElementById('productName').value.trim();
+    if (!name) { alert('Enter product name'); return; }
+
+    const categoryDivs = document.querySelectorAll('.category-input');
+    const categories = {};
+    categoryDivs.forEach(div => {
+        const catName = div.querySelector('.cat-name').value.trim();
+        const catValue = div.querySelector('.cat-value').value.trim();
+        if (catName && catValue) categories[catName] = catValue;
+    });
+
+    const response = await fetch('/generate_sku', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, categories })
+    });
+
+    const data = await response.json();
+    if (data.error) { alert(data.error); return; }
+
+    // Display SKU and category heads
+    document.getElementById('sku').textContent = data.sku;
+    document.getElementById('catDisplay').textContent = data.category_heads.join(', ');
+
+    // Display barcode
+    document.getElementById('barcode').innerHTML = `<img src="${data.barcode_url}" alt="Barcode">`;
+
+    // Display full form -> code mapping on right-hand side
+    const fullValuesDiv = document.getElementById('fullValues');
+    fullValuesDiv.innerHTML = '';
+    for (const [full, code] of Object.entries(data.category_codes)) {
+        const p = document.createElement('p');
+        p.textContent = `${full}: ${code}`;
+        fullValuesDiv.appendChild(p);
+    }
+});
+</script>
+
 </body>
 </html>

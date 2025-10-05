@@ -99,7 +99,24 @@ def generate_sku():
         return jsonify({"error": "Failed to generate barcode"}), 500
 
     barcode_url = url_for('static', filename=f"barcodes/{os.path.basename(barcode_path)}")
-    return jsonify({"sku": sku, "barcode_url": barcode_url})
+
+    # Generate short codes for category values
+    category_codes = {}
+    for key, value in categories.items():
+        val_words = value.strip().split()
+        if len(val_words) == 1:
+            code = value[:3].upper()
+        else:
+            code = ''.join(word[0].upper() for word in val_words)
+        category_codes[value] = code
+
+    return jsonify({
+        "sku": sku,
+        "barcode_url": barcode_url,
+        "category_heads": list(categories.keys()),
+        "category_codes": category_codes  # full form -> code
+    })
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',debug=True)
