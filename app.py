@@ -80,8 +80,7 @@ def save_barcode(sku, name):
         return None
 @app.route('/')
 def home():
-    # Serves static/index.html
-    return app.send_static_file('index.html')
+    return render_template('index.html')
 
 
 @app.route('/generate_sku', methods=['POST'])
