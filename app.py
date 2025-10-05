@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify, url_for
 import os, re, random, string, time
 import barcode
 from barcode.writer import ImageWriter
-
+from flask import send_from_directory
 # Optional fallback library
 try:
     import treepoem
@@ -81,7 +81,7 @@ def save_barcode(sku, name):
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return send_from_directory('/Users/eklavyapopli/sku_dahsboard/index.html', 'index.html')
 
 @app.route('/generate_sku', methods=['POST'])
 def generate_sku():
