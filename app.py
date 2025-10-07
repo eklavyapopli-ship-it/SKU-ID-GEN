@@ -1,20 +1,27 @@
-from flask import Flask, render_template, request, jsonify, send_file
-import random
-import string
-import csv
-import os
+from flask import Flask, render_template, request, jsonify, url_for
+import os, re, random, string, time
+import barcode
+from barcode.writer import ImageWriter
+from flask import send_from_directory
+
+# Optional fallback library
+try:
+    import treepoem
+except ImportError:
+    treepoem = None
 
 app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = os.path.join('static', 'barcodes')
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Track SKUs per product name
+# Track SKUs and barcode files per product name
 existing_skus = {}
-CSV_FILE = 'skus.csv'
+existing_barcodes = {}
 
-# Generate short random string (used if duplicate SKUs occur)
 def random_suffix(length=4):
     return ''.join(random.choices(string.ascii_uppercase, k=length))
 
-# Create SKU from product name + category dictionary
+# Generate SKU from product name + category dictionary
 def create_sku(name, categories):
     words = name.strip().split()
     name_prefix = '-'.join([w[:3].upper() for w in words[:3]]) or "PRD"
@@ -24,7 +31,7 @@ def create_sku(name, categories):
         val = value.strip()
         val_words = val.split()
         if len(val_words) == 1:
-            cat_prefix = val_words[0][:3].upper()
+            cat_prefix = val[:3].upper()
         else:
             cat_prefix = ''.join(word[0].upper() for word in val_words)
         cat_prefixes.append(cat_prefix)
@@ -41,62 +48,76 @@ def create_sku(name, categories):
 
     return sku
 
-# Save to CSV
-def save_to_csv(product_name, categories, sku):
-    file_exists = os.path.isfile(CSV_FILE)
-    with open(CSV_FILE, mode='a', newline='') as file:
-        writer = csv.writer(file)
-        if not file_exists:
-            # Header row
-            header = ['Product Name', 'SKU'] + list(categories.keys())
-            writer.writerow(header)
-        row = [product_name, sku] + list(categories.values())
-        writer.writerow(row)
+# Save barcode image
+def save_barcode(sku, name):
+    safe_name = re.sub(r'\W+', '_', name)
+    filename = f"{safe_name}_{int(time.time())}.png"
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+    # Delete old barcode if exists
+    if name in existing_barcodes:
+        old_file = existing_barcodes[name]
+        if os.path.exists(old_file):
+            try:
+                os.remove(old_file)
+                print(f"🗑️ Deleted old barcode: {old_file}")
+            except Exception as e:
+                print(f"⚠️ Could not delete old barcode: {e}")
+
+    try:
+        barcode_class = barcode.get_barcode_class('code128')
+        code128 = barcode_class(sku, writer=ImageWriter())
+        code128.save(filepath.replace('.png', ''), options={"write_text": True})
+        existing_barcodes[name] = filepath
+        return filepath
+    except Exception:
+        if treepoem:
+            img = treepoem.generate_barcode(barcode_type="code128", data=sku)
+            img.convert("1").save(filepath)
+            existing_barcodes[name] = filepath
+            return filepath
+        return None
+
 
 @app.route('/')
 def home():
     return render_template('index.html')
 
+
 @app.route('/generate_sku', methods=['POST'])
 def generate_sku():
     data = request.get_json()
-    products = data.get('products', [])
+    name = data.get('name', '').strip()
+    categories = data.get('categories', {})
 
-    results = []
+    if not name:
+        return jsonify({"error": "Product name is required"}), 400
 
-    for product in products:
-        name = product.get('name', '').strip()
-        categories = product.get('categories', {})
+    sku = create_sku(name, categories)
+    barcode_path = save_barcode(sku, name)
 
-        if not name:
-            continue
+    if not barcode_path:
+        return jsonify({"error": "Failed to generate barcode"}), 500
 
-        sku = create_sku(name, categories)
-        save_to_csv(name, categories, sku)
+    barcode_url = url_for('static', filename=f"barcodes/{os.path.basename(barcode_path)}")
 
-        category_codes = {}
-        for key, value in categories.items():
-            val_words = value.strip().split()
-            if len(val_words) == 1:
-                code = value[:3].upper()
-            else:
-                code = ''.join(word[0].upper() for word in val_words)
-            category_codes[value] = code
+    # Create mapping of full form → code (for right side display)
+    category_codes = {}
+    for key, value in categories.items():
+        val_words = value.strip().split()
+        if len(val_words) == 1:
+            code = value[:3].upper()
+        else:
+            code = ''.join(word[0].upper() for word in val_words)
+        category_codes[value] = code
 
-        results.append({
-            "name": name,
-            "sku": sku,
-            "category_heads": list(categories.keys()),
-            "category_codes": category_codes
-        })
+    return jsonify({
+        "sku": sku,
+        "barcode_url": barcode_url,
+        "category_heads": list(categories.keys()),
+        "category_codes": category_codes
+    })
 
-    return jsonify({"results": results, "csv_file": CSV_FILE})
-
-@app.route('/download_csv')
-def download_csv():
-    if os.path.exists(CSV_FILE):
-        return send_file(CSV_FILE, as_attachment=True)
-    return "No CSV found", 404
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    app.run(debug=True)

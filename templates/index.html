@@ -5,85 +5,135 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SKU Generator</title>
 <style>
-    *{ }
-body { font-family: Arial, sans-serif; margin: 0; padding: 20px; display: flex; gap: 20px; background:linear-gradient(135deg,rgba(182, 204, 204, 0.719)); }
-.container { flex: 1; }
-input, button { padding: 8px; margin: 5px 0; width: 100%; max-width: 300px; }
-.category-input { display: flex; gap: 10px; margin-bottom: 5px; }
-#barcode img { max-width: 200px; margin-top: 10px; }
-.cat-name{
-    width: 100%;
-}
-.right-column { flex: 1; border-left: 1px solid #ccc; padding-left: 20px; }
-.right-column h3 { margin-top: 0; }
-@media (max-width:728px) {
-    .category-input{
-        display: block;
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        background: #f9f9f9;
     }
-}
+    .container, .right-column {
+        flex: 1;
+        min-width: 300px;
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    h2, h3 {
+        margin-top: 0;
+        color: #333;
+    }
+    input, button {
+        padding: 10px;
+        margin: 6px 0;
+        width: 100%;
+        max-width: 350px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        font-size: 16px;
+    }
+    button {
+        cursor: pointer;
+        background: #007bff;
+        color: white;
+        border: none;
+        transition: 0.3s;
+    }
+    button:hover {
+        background: #0056b3;
+    }
+    .category-input {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-bottom: 8px;
+    }
+    .category-input input {
+        flex: 1;
+        min-width: 120px;
+    }
+    .category-input button {
+        background: #dc3545;
+        flex: 0 0 auto;
+        padding: 8px 12px;
+    }
+    .category-input button:hover {
+        background: #b02a37;
+    }
+    #barcode img {
+        max-width: 200px;
+        margin-top: 10px;
+    }
+    #fullValues p {
+        font-size: 16px;
+        margin: 6px 0;
+        padding: 8px 10px;
+        background: #f2f2f2;
+        border-radius: 6px;
+        word-break: break-word;
+    }
+
+    /* --- 📱 Responsive Styling --- */
+    @media (max-width: 900px) {
+        body {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .container, .right-column {
+            width: 100%;
+            max-width: 100%;
+        }
+        .category-input {
+            flex-direction: column;
+        }
+        input, button {
+            max-width: 100%;
+        }
+        #barcode img {
+            max-width: 100%;
+        }
+    }
 </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>MADE BY EKLAVYA POPLI</h2>
     <h2>SKU & Barcode Generator</h2>
-    <div id="productsContainer">
-        <div class="product-input">
-            <input type="text" placeholder="Product Name" class="product-name">
-            <div class="categoriesContainer">
-                <div class="category-input">
-                    <input type="text" placeholder="Category Name" class="cat-name">
-                    <input type="text" placeholder="Category Value" class="cat-value">
-                    <button type="button" onclick="removeCategory(this)">❌</button>
-                </div>
-            </div>
-            <button type="button" onclick="addCategoryRow(this)">➕ Add Category</button>
-            <button type="button" onclick="removeProduct(this)">🗑 Remove Product</button>
-            <hr>
+    <input type="text" id="productName" placeholder="Product Name">
+
+    <div id="categoriesContainer">
+        <div class="category-input">
+            <input type="text" placeholder="Category Name" class="cat-name">
+            <input type="text" placeholder="Category Value (Full Form)" class="cat-value">
+            <button type="button" onclick="removeCategory(this)">X</button>
         </div>
     </div>
-    <button type="button" onclick="addProduct()">➕ Add Product</button>
-    <br>
-    <button id="generateBtn">Generate SKUs</button>
-    <a id="downloadCSV" href="#" style="display:none" download>Download CSV</a>
+    <button type="button" onclick="addCategory()">➕ Add Category</button>
+    <br><br>
+    <button id="generateBtn">Generate SKU</button>
 
-    <h3>Results:</h3>
-    <div id="results"></div>
+    <h3>Result:</h3>
+    <p><strong>SKU:</strong> <span id="sku"></span></p>
+    <p><strong>Category Heads:</strong> <span id="catDisplay"></span></p>
+    <div id="barcode"></div>
+</div>
+
+<div class="right-column">
+    <h3>Full Form → Code</h3>
+    <div id="fullValues"></div>
 </div>
 
 <script>
-function addProduct() {
-    const container = document.getElementById('productsContainer');
-    const div = document.createElement('div');
-    div.className = 'product-input';
-    div.innerHTML = `
-        <input type="text" placeholder="Product Name" class="product-name">
-        <div class="categoriesContainer">
-            <div class="category-input">
-                <input type="text" placeholder="Category Name" class="cat-name">
-                <input type="text" placeholder="Category Value" class="cat-value">
-                <button type="button" onclick="removeCategory(this)">❌</button>
-            </div>
-        </div>
-        <button type="button" onclick="addCategoryRow(this)">➕ Add Category</button>
-        <button type="button" onclick="removeProduct(this)">🗑 Remove Product</button>
-        <hr>
-    `;
-    container.appendChild(div);
-}
-
-function removeProduct(btn) {
-    btn.parentElement.remove();
-}
-
-function addCategoryRow(btn) {
-    const container = btn.parentElement.querySelector('.categoriesContainer');
+function addCategory() {
+    const container = document.getElementById('categoriesContainer');
     const div = document.createElement('div');
     div.className = 'category-input';
     div.innerHTML = `
         <input type="text" placeholder="Category Name" class="cat-name">
-        <input type="text" placeholder="Category Value" class="cat-value">
+        <input type="text" placeholder="Category Value (Full Form)" class="cat-value">
         <button type="button" onclick="removeCategory(this)">❌</button>
     `;
     container.appendChild(div);
@@ -94,51 +144,39 @@ function removeCategory(btn) {
 }
 
 document.getElementById('generateBtn').addEventListener('click', async () => {
-    const productDivs = document.querySelectorAll('.product-input');
-    const products = [];
+    const name = document.getElementById('productName').value.trim();
+    if (!name) { alert('Enter product name'); return; }
 
-    productDivs.forEach(prodDiv => {
-        const name = prodDiv.querySelector('.product-name').value.trim();
-        const categories = {};
-        const categoryDivs = prodDiv.querySelectorAll('.category-input');
-        categoryDivs.forEach(catDiv => {
-            const catName = catDiv.querySelector('.cat-name').value.trim();
-            const catValue = catDiv.querySelector('.cat-value').value.trim();
-            if (catName && catValue) categories[catName] = catValue;
-        });
-        if (name) products.push({name, categories});
+    const categoryDivs = document.querySelectorAll('.category-input');
+    const categories = {};
+    categoryDivs.forEach(div => {
+        const catName = div.querySelector('.cat-name').value.trim();
+        const catValue = div.querySelector('.cat-value').value.trim();
+        if (catName && catValue) categories[catName] = catValue;
     });
-
-    if (!products.length) { alert('Add at least one product'); return; }
 
     const response = await fetch('/generate_sku', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({products})
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, categories })
     });
 
     const data = await response.json();
+    if (data.error) { alert(data.error); return; }
 
-    const resultsDiv = document.getElementById('results');
-    resultsDiv.innerHTML = '';
-    data.results.forEach(res => {
-        const div = document.createElement('div');
-        div.innerHTML = `
-            <strong>${res.name}</strong> → SKU: ${res.sku}<br>
-            Category Heads: ${res.category_heads.join(', ')}<br>
-            <ul>
-                ${Object.entries(res.category_codes).map(([full, code]) => `<li>${full}: ${code}</li>`).join('')}
-            </ul>
-        `;
-        resultsDiv.appendChild(div);
-    });
+    document.getElementById('sku').textContent = data.sku;
+    document.getElementById('catDisplay').textContent = data.category_heads.join(', ');
+    document.getElementById('barcode').innerHTML = `<img src="${data.barcode_url}" alt="Barcode">`;
 
-    const downloadLink = document.getElementById('downloadCSV');
-    downloadLink.href = `/download_csv`;
-    downloadLink.style.display = 'inline';
+    const fullValuesDiv = document.getElementById('fullValues');
+    fullValuesDiv.innerHTML = '';
+    for (const [full, code] of Object.entries(data.category_codes)) {
+        const p = document.createElement('p');
+        p.textContent = `${full}: ${code}`;
+        fullValuesDiv.appendChild(p);
+    }
 });
 </script>
-
 
 </body>
 </html>
