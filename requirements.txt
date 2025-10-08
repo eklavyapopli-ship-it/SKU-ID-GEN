@@ -2,3 +2,4 @@ Flask
 python-barcode
 treepoem
 gunicorn
+dotenv
