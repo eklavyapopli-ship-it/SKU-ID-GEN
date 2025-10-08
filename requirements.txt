@@ -2,4 +2,7 @@ Flask
 python-barcode
 treepoem
 gunicorn
-dotenv
+python-dotenv
+pymongo
+
+
