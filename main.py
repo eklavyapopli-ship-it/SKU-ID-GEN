@@ -121,3 +121,5 @@ def generate_sku_route():
 # ------------------ WSGI Entry ------------------
 # This is the Flask app Gunicorn will use
 # Gunicorn will run: gunicorn app:app
+if __name__ == '__main__':
+    app.run(host='0.0.0.0',debug=True)
