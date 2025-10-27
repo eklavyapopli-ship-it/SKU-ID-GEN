@@ -5,7 +5,7 @@ from pymongo import MongoClient
 import barcode
 from barcode.writer import ImageWriter
 
-# ------------------ Setup ------------------
+
 app = Flask(__name__)
 load_dotenv()
 
@@ -20,25 +20,25 @@ client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
 skus_collection = db["skus"]
 
-# Directory for barcode images
+
 app.config["UPLOAD_FOLDER"] = os.path.join("static", "barcodes")
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
-# ------------------ Helpers ------------------
+
 def random_suffix(length=4):
     return ''.join(random.choices(string.ascii_uppercase, k=length))
 
 def create_sku(name, categories):
-    """Generate a new SKU after deleting all existing SKUs."""
-    # 1️⃣ Delete all existing SKUs in DB
+ 
+ 
     skus_collection.delete_many({})
     print("🗑️ Deleted all existing SKUs in database")
 
-    # Normalize inputs
+   
     name = name.strip().title()
     categories = {k.strip().title(): v.strip().title() for k, v in categories.items()}
 
-    # 2️⃣ Generate SKU
+
     words = name.split()
     name_prefix = '-'.join([w[:3].upper() for w in words[:3]]) or "PRD"
 
@@ -54,11 +54,11 @@ def create_sku(name, categories):
     base_sku = f"{name_prefix}-{'-'.join(cat_prefixes)}" if cat_prefixes else name_prefix
     sku = base_sku
 
-    # Ensure SKU uniqueness (should be unique after DB deletion)
+  
     while skus_collection.find_one({"sku": sku}):
         sku = f"{base_sku}-{random_suffix()}"
 
-    # 3️⃣ Save new SKU in MongoDB
+ 
     skus_collection.insert_one({
         "product_name": name,
         "categories": categories,
@@ -86,7 +86,6 @@ def save_barcode(sku, name):
         return None
 
 
-# ------------------ Routes ------------------
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -109,7 +108,7 @@ def generate_sku():
 
     barcode_url = url_for('static', filename=f"barcodes/{os.path.basename(barcode_path)}")
 
-    # Create category code mapping
+   
     category_codes = {}
     for key, value in categories.items():
         val_words = value.strip().split()
@@ -124,7 +123,7 @@ def generate_sku():
     })
 
 
-# ------------------ Run App ------------------
+
 if __name__ == '__main__':
     print("✅ Connected to MongoDB successfully!")
     app.run(host='0.0.0.0', debug=True)
